@@ -2,14 +2,15 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { Role } from "@/lib/auth";
 
 type AuthGuardProps = {
   children: ReactNode;
-  allowedRoles?: string[];
+  allowedRoles?: Role[];
 };
 
 export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
-  const [user, setUser] = useState<{ username: string; role: string } | null>(null);
+  const [user, setUser] = useState<{ username: string; role: Role } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -19,7 +20,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
       return;
     }
 
-    const parsedUser = JSON.parse(storedUser);
+    const parsedUser = JSON.parse(storedUser) as { username: string; role: Role };
     if (allowedRoles && !allowedRoles.includes(parsedUser.role)) {
       router.push("/login");
       return;
@@ -28,7 +29,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
     setUser(parsedUser);
   }, [router, allowedRoles]);
 
-  if (!user) return null; // ou um loader
+  if (!user) return <div>Carregando...</div>;
 
   return <>{children}</>;
 }

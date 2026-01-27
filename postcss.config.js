@@ -1,3 +1,5 @@
+/*D:\Users\steli\Desktop\Transportadoras\transporte-moz\postcss.config.js*/
+
 module.exports = {
   plugins: {
     '@tailwindcss/postcss': {},

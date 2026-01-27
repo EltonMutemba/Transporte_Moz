@@ -9,3 +9,5 @@ module.exports = {
   },
   plugins: [],
 }
+
+/*D:\Users\steli\Desktop\Transportadoras\transporte-moz\tailwind.config.js*/
