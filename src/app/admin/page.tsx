@@ -1,4 +1,4 @@
-import { AuthGuard } from "@/components/AuthGuard"
+import { AuthGuard } from "@/components/shared/AuthGuard"
 
 export default function AdminPage() {
   return (
