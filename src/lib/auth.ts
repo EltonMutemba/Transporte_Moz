@@ -1,3 +1,4 @@
+// src/lib/auth.ts
 export type Role = "admin" | "dono" | "cobrador" | "cliente";
 
 export type User = {
@@ -13,7 +14,6 @@ export const users: (User & { password: string })[] = [
 ];
 
 export function authenticate(username: string, password: string): User | null {
-  const found = users.find(u => u.username === username && u.password === password);
-  if (!found) return null;
-  return { username: found.username, role: found.role };
+  const found = users.find((u) => u.username === username && u.password === password);
+  return found ? { username: found.username, role: found.role } : null;
 }

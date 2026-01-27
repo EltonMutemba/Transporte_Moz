@@ -2,38 +2,51 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/"];
+// Defina as rotas que precisam de autenticação e os papéis permitidos
+const protectedRoutes: { path: string; roles: string[] }[] = [
+  { path: "/admin", roles: ["admin"] },
+  { path: "/dono", roles: ["dono"] },
+  { path: "/cobrador", roles: ["cobrador"] },
+  { path: "/cliente", roles: ["cliente"] },
+];
 
 export function middleware(req: NextRequest) {
-  const path = req.nextUrl.pathname;
+  const { pathname } = req.nextUrl;
 
-  if (PUBLIC_PATHS.includes(path)) {
+  // Permitir arquivos estáticos e /login
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon.ico") ||
+    pathname === "/login"
+  ) {
     return NextResponse.next();
   }
 
+  // Verificar se a rota é protegida
+  const route = protectedRoutes.find((r) => pathname.startsWith(r.path));
+  if (!route) {
+    return NextResponse.next();
+  }
+
+  // Verificar usuário armazenado nos cookies (ou Authorization header)
   const userCookie = req.cookies.get("user");
   if (!userCookie) {
-    const loginUrl = req.nextUrl.clone();
-    loginUrl.pathname = "/login";
+    const loginUrl = new URL("/login", req.url);
     return NextResponse.redirect(loginUrl);
   }
 
-  const user = JSON.parse(userCookie.value);
-  const role = user.role;
+  const user = JSON.parse(userCookie.value) as { username: string; role: string };
 
-  if (path.startsWith("/admin") && role !== "admin") return NextResponse.redirect("/");
-  if (path.startsWith("/dono") && role !== "dono") return NextResponse.redirect("/");
-  if (path.startsWith("/cobrador") && role !== "cobrador") return NextResponse.redirect("/");
-  if (path.startsWith("/cliente") && role !== "cliente") return NextResponse.redirect("/");
+  // Verificar se o papel é permitido
+  if (!route.roles.includes(user.role)) {
+    const loginUrl = new URL("/login", req.url);
+    return NextResponse.redirect(loginUrl);
+  }
 
   return NextResponse.next();
 }
 
+// Quais rotas esse middleware deve rodar
 export const config = {
-  matcher: [
-    "/admin/:path*", 
-    "/dono/:path*", 
-    "/cobrador/:path*", 
-    "/cliente/:path*"
-  ],
+  matcher: ["/admin/:path*", "/dono/:path*", "/cobrador/:path*", "/cliente/:path*"],
 };

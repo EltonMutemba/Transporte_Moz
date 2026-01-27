@@ -1,30 +1,34 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { ReactNode, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-export function AuthGuard({ children }: { children: React.ReactNode }) {
+type AuthGuardProps = {
+  children: ReactNode;
+  allowedRoles?: string[];
+};
+
+export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
+  const [user, setUser] = useState<{ username: string; role: string } | null>(null);
   const router = useRouter();
-  const pathname = usePathname();
-  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    const userStr = sessionStorage.getItem("user");
-    if (!userStr) {
-      router.push("/(auth)/login");
+    const storedUser = sessionStorage.getItem("user");
+    if (!storedUser) {
+      router.push("/login");
       return;
     }
 
-    const user = JSON.parse(userStr);
-    if (!pathname.includes(user.role)) {
-      router.push("/(auth)/login");
+    const parsedUser = JSON.parse(storedUser);
+    if (allowedRoles && !allowedRoles.includes(parsedUser.role)) {
+      router.push("/login");
       return;
     }
 
-    setAuthorized(true);
-  }, [pathname, router]);
+    setUser(parsedUser);
+  }, [router, allowedRoles]);
 
-  if (!authorized) return <div className="p-10 text-center">Verificando acesso...</div>;
+  if (!user) return null; // ou um loader
 
   return <>{children}</>;
 }
