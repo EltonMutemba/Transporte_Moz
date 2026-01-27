@@ -1,13 +1,20 @@
 // src/lib/auth.ts
+export type Role = "admin" | "dono" | "cobrador" | "cliente";
 
-export async function authenticate(formData: FormData) {
-    // Por enquanto, vamos apenas simular a validação
-    const email = formData.get('email');
-    const password = formData.get('password');
-  
-    if (email === "admin@transporto.com" && password === "123456") {
-      return { success: true, user: { name: "Admin", role: "admin" } };
-    }
-  
-    return { success: false, error: "E-mail ou senha incorretos." };
-  }
+export type User = {
+  username: string;
+  role: Role;
+};
+
+export const users: User & { password: string }[] = [
+  { username: "admin", password: "123", role: "admin" },
+  { username: "dono", password: "123", role: "dono" },
+  { username: "cobrador", password: "123", role: "cobrador" },
+  { username: "cliente", password: "123", role: "cliente" },
+];
+
+export function authenticate(username: string, password: string): User | null {
+  const found = users.find(u => u.username === username && u.password === password);
+  if (!found) return null;
+  return { username: found.username, role: found.role };
+}
