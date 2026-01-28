@@ -1,10 +1,22 @@
 import "../globals.css";
-import type { ReactNode } from "react";
+import type { Metadata } from "next";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export const metadata: Metadata = {
+  title: "Trans-Moz - Gestão de Transportadoras",
+  description: "Plataforma SaaS para gestão de frotas e bilhética em Moçambique",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="pt">
-      <body>{children}</body>
+      <body className="antialiased bg-gray-50">
+        {/* O conteúdo das páginas (public e dashboard) entra aqui */}
+        {children}
+      </body>
     </html>
   );
 }
