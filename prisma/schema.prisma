@@ -8,10 +8,10 @@ datasource db {
 }
 
 enum Role {
-  ADMIN
-  OWNER
-  STAFF
-  CLIENT
+  ADMIN  // Gestor operacional (Nagi)
+  OWNER  // Dono que só vê relatórios
+  STAFF  // Bilheteiro
+  CLIENT // Passageiro
 }
 
 model User {
@@ -25,37 +25,33 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   tickets   Ticket[]
+  logs      AuditLog[] // Para o Owner fiscalizar
 
   @@map("users")
 }
 
-model Location {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-
-  @@map("locations")
-}
-
 model Bus {
-  id    Int    @id @default(autoincrement())
-  plate String @unique
-  model String
-  trips Trip[]
+  id        Int     @id @default(autoincrement())
+  plate     String  @unique
+  model     String
+  capacity  Int     // Adicionado: Essencial para validar lotação
+  trips     Trip[]
 
   @@map("buses")
 }
 
 model Trip {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   origin         String
   destination    String
   departureTime  DateTime
-  price          Decimal  @db.Decimal(10, 2)
-  status         String   @default("AVAILABLE")
+  price          Decimal   @db.Decimal(10, 2)
+  status         String    @default("AVAILABLE")
   busId          Int
-  bus            Bus      @relation(fields: [busId], references: [id])
+  bus            Bus       @relation(fields: [busId], references: [id])
   availableSeats Int
   tickets        Ticket[]
+  packages       Package[] // Inclusão de Encomendas
 
   @@map("trips")
 }
@@ -72,4 +68,30 @@ model Ticket {
   createdAt     DateTime @default(now())
 
   @@map("tickets")
+}
+
+// NOVA: Essencial para o negócio em Moçambique
+model Package {
+  id            Int      @id @default(autoincrement())
+  description   String
+  weight        Decimal? @db.Decimal(10, 2)
+  price         Decimal  @db.Decimal(10, 2)
+  receiverName  String
+  receiverPhone String
+  tripId        Int
+  trip          Trip     @relation(fields: [tripId], references: [id])
+  status        String   @default("PENDING") // PENDING, DELIVERED
+
+  @@map("packages")
+}
+
+// NOVA: Para o Owner (Dono) ter o controle que discutimos
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  action    String   // ex: "Preço da viagem alterado"
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
 }

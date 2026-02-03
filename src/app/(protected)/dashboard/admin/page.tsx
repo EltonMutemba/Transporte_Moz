@@ -1,181 +1,139 @@
-import React from "react";
-import { 
-  Users, Bus, Wallet, AlertTriangle, 
-  ArrowUpRight, TrendingUp, MapPin, MoreHorizontal 
-} from "lucide-react";
+"use client";
 
-export default function AdminDashboardPage() {
-  return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
-      {/* 1. HEADER DA PÁGINA */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-black tracking-tighter text-slate-900 uppercase">
-            Visão <span className="text-red-600">Geral</span>
-          </h1>
-          <p className="text-slate-500 font-medium mt-1">Bem-vindo ao centro de comando operacional.</p>
-        </div>
-        
-        <div className="flex gap-2">
-          <button className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
-            Exportar PDF
-          </button>
-          <button className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-slate-200">
-            Novo Relatório
-          </button>
-        </div>
-      </div>
+import React, { useState } from "react";
+import { Search, Shield, Smartphone, Crown, Users2 } from "lucide-react";
+import { AddUserButton } from "@/components/dashboard/AddUserButton";
+import { UserActions } from "@/components/dashboard/UserActions";
 
-      {/* 2. GRID DE CARTÕES (KPIs) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          label="Receita Mensal" 
-          value="1.240.500 MT" 
-          icon={<Wallet size={20}/>} 
-          trend="+14.2%" 
-          color="blue"
-        />
-        <StatCard 
-          label="Utilizadores Ativos" 
-          value="4.821" 
-          icon={<Users size={20}/>} 
-          trend="+5.1%" 
-          color="indigo"
-        />
-        <StatCard 
-          label="Frota em Movimento" 
-          value="32 / 45" 
-          icon={<Bus size={20}/>} 
-          trend="82%" 
-          color="emerald"
-        />
-        <StatCard 
-          label="Alertas de Manutenção" 
-          value="07" 
-          icon={<AlertTriangle size={20}/>} 
-          isCritical 
-          color="red"
-        />
-      </div>
+export default function UsersAdminPage({ initialUsers = [] }: { initialUsers: any[] }) {
+  const [activeTab, setActiveTab] = useState<'staff' | 'clientes'>('staff');
+  const [search, setSearch] = useState("");
 
-      {/* 3. ÁREA DE CONTEÚDO PRINCIPAL (Duas Colunas) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* TABELA DE ÚLTIMAS TRANSAÇÕES (Larga) */}
-        <div className="lg:col-span-2 bg-white border border-slate-200/60 rounded-[2.5rem] shadow-sm overflow-hidden flex flex-col">
-          <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-            <h3 className="font-black text-slate-900 uppercase text-xs tracking-[0.2em]">Fluxo de Caixa Recente</h3>
-            <TrendingUp size={16} className="text-slate-300" />
-          </div>
-          <div className="p-2 overflow-x-auto">
-            <table className="w-full text-left border-separate border-spacing-y-2">
-              <thead>
-                <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">
-                  <th className="px-6 py-3">Cliente</th>
-                  <th className="px-6 py-3">Rota</th>
-                  <th className="px-6 py-3">Valor</th>
-                  <th className="px-6 py-3 text-right">Ação</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                <TransactionRow name="Helton Stélio" route="Maputo ➔ Beira" amount="2.500 MT" status="Pago" />
-                <TransactionRow name="Artur Mutemba" route="Matola ➔ Xai-Xai" amount="800 MT" status="Pago" />
-                <TransactionRow name="Sara Macuácua" route="Nampula ➔ Pemba" amount="3.200 MT" status="Pendente" />
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* LISTA DE ALERTAS / MONITORAMENTO (Estreita) */}
-        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="font-black uppercase text-[10px] tracking-[0.2em] text-slate-400">Monitor de Frota</h3>
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          </div>
-          
-          <div className="space-y-6">
-            <FleetAlert bus="TPM-01-MP" location="Av. Eduardo Mondlane" status="Atrasado 12min" type="warning" />
-            <FleetAlert bus="TPM-42-GZ" location="Portagem Sul" status="Em Movimento" type="success" />
-            <FleetAlert bus="TPM-09-NB" location="Garagem Central" status="Manutenção" type="error" />
-          </div>
-
-          <button className="w-full mt-10 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
-            Ver Mapa em Tempo Real
-          </button>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-// COMPONENTES AUXILIARES (Poderiam estar em arquivos separados)
-
-function StatCard({ label, value, icon, trend, isCritical, color }: any) {
-  return (
-    <div className="bg-white border border-slate-200/60 p-7 rounded-[2.5rem] hover:shadow-xl transition-all group">
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-4 bg-${color}-50 text-${color}-600 rounded-2xl group-hover:scale-110 transition-transform`}>
-          {icon}
-        </div>
-        {trend && (
-          <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${isCritical ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
-            {trend}
-          </span>
-        )}
-      </div>
-      <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest leading-none">{label}</p>
-      <p className={`text-2xl font-black mt-2 tracking-tighter ${isCritical ? 'text-red-600' : 'text-slate-900'}`}>{value}</p>
-    </div>
-  );
-}
-
-function TransactionRow({ name, route, amount, status }: any) {
-  return (
-    <tr className="bg-slate-50/50 hover:bg-slate-50 transition-colors group">
-      <td className="px-6 py-4 rounded-l-2xl border-y border-l border-transparent group-hover:border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black uppercase">
-            {name[0]}
-          </div>
-          <span className="font-bold text-slate-800 tracking-tight">{name}</span>
-        </div>
-      </td>
-      <td className="px-6 py-4 border-y border-transparent group-hover:border-slate-100 text-slate-500 font-medium text-xs">
-        {route}
-      </td>
-      <td className="px-6 py-4 border-y border-transparent group-hover:border-slate-100 font-black text-slate-900">
-        {amount}
-      </td>
-      <td className="px-6 py-4 rounded-r-2xl border-y border-r border-transparent group-hover:border-slate-100 text-right">
-        <button className="p-2 hover:bg-white rounded-lg transition-colors">
-          <MoreHorizontal size={16} className="text-slate-400" />
-        </button>
-      </td>
-    </tr>
-  );
-}
-
-function FleetAlert({ bus, location, status, type }: any) {
-  const colors = {
-    success: "bg-emerald-500",
-    warning: "bg-amber-500",
-    error: "bg-red-500"
+  const roleStyles: any = {
+    OWNER: "bg-blue-50 text-blue-700 border-blue-100",
+    ADMIN: "bg-red-50 text-red-700 border-red-100",
+    STAFF: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    CLIENT: "bg-slate-100 text-slate-700 border-slate-200",
   };
 
+  // FILTRAGEM COM PRIORIDADE EXECUTIVA [cite: 2026-01-28]
+  const filteredUsers = initialUsers
+    .filter((user) => {
+      const matchesSearch = 
+        user.name?.toLowerCase().includes(search.toLowerCase()) || 
+        user.email?.toLowerCase().includes(search.toLowerCase()) ||
+        user.phone?.includes(search);
+      
+      if (activeTab === 'staff') {
+        return matchesSearch && ['OWNER', 'ADMIN', 'STAFF'].includes(user.role);
+      }
+      return matchesSearch && ['CLIENT', 'USER', 'PASSAGEIRO'].includes(user.role);
+    })
+    .sort((a, b) => (a.role === 'OWNER' ? -1 : 1));
+
   return (
-    <div className="flex items-start gap-4">
-      <div className={`w-1 h-10 rounded-full ${colors[type as keyof typeof colors]}`} />
-      <div>
-        <p className="text-xs font-black tracking-tight">{bus}</p>
-        <div className="flex items-center gap-1 text-slate-500 mt-0.5">
-          <MapPin size={10} />
-          <span className="text-[10px] font-bold">{location}</span>
+    // pb-32 garante que o dropdown do último utilizador não seja cortado pelo fim da página [cite: 2026-01-28]
+    <div className="space-y-8 animate-in fade-in duration-500 pb-32">
+      
+      {/* 1. HEADER E AÇÃO PRINCIPAL */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-4xl font-black tracking-tight text-slate-950 uppercase">
+            Gestão de <span className="text-blue-600">Identidades</span>
+          </h1>
+          <p className="text-slate-500 font-semibold text-sm mt-1">
+            Administração de privilégios e base de dados operacional.
+          </p>
         </div>
-        <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${type === 'error' ? 'text-red-400' : 'text-slate-400'}`}>
-          {status}
-        </p>
+        <AddUserButton />
+      </div>
+
+      {/* 2. BARRA DE FERRAMENTAS: BUSCA E FILTRO DE TIPO [cite: 2026-01-28] */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex p-1.5 bg-slate-100 rounded-[1.5rem] border border-slate-200 w-fit">
+          <button 
+            onClick={() => setActiveTab('staff')}
+            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'staff' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Equipa & Direção
+          </button>
+          <button 
+            onClick={() => setActiveTab('clientes')}
+            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'clientes' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Passageiros
+          </button>
+        </div>
+
+        <div className="relative flex-1 group">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-600 transition-colors" />
+          <input 
+            type="text" 
+            placeholder="PESQUISAR POR NOME, EMAIL OU TELEFONE..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-white border border-slate-200 rounded-[1.5rem] py-5 pl-16 pr-8 text-sm font-semibold text-slate-900 outline-none focus:ring-4 focus:ring-blue-600/5 transition-all" 
+          />
+        </div>
+      </div>
+
+      {/* 3. TABELA DE DADOS - REMOVIDO OVERFLOW HIDDEN PARA NÃO CORTAR DROPDOWNS */}
+      <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-sm">
+        <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 rounded-t-[2.5rem]">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white rounded-lg shadow-sm">
+              <Users2 size={20} className="text-blue-600" />
+            </div>
+            <h3 className="font-bold text-slate-800 uppercase text-sm tracking-widest">
+              {activeTab === 'staff' ? 'Corpo Operacional' : 'Lista de Clientes'}
+            </h3>
+          </div>
+          <span className="text-xs font-bold text-slate-400 uppercase">Total: {filteredUsers.length}</span>
+        </div>
+
+        <div className="p-6">
+          <table className="w-full text-left border-separate border-spacing-y-4">
+            <thead>
+              <tr className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">
+                <th className="px-6 pb-2">Identidade</th>
+                <th className="px-6 pb-2">Nível de Acesso</th>
+                <th className="px-6 pb-2">Contacto</th>
+                <th className="px-6 pb-2 text-right">Gestão</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user) => (
+                <tr key={user.id} className="group transition-all">
+                  <td className="px-6 py-5 bg-slate-50/50 group-hover:bg-blue-50/30 border-y border-l border-transparent group-hover:border-blue-100 rounded-l-[2rem] transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 text-slate-950 flex items-center justify-center font-black text-sm relative">
+                        {user.name?.[0] || "U"}
+                        {user.role === 'OWNER' && <Crown size={12} className="absolute -top-1 -right-1 text-amber-500 fill-amber-500" />}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-950 text-base leading-tight">{user.name || user.username}</p>
+                        <p className="text-xs text-slate-500 lowercase mt-0.5">{user.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 bg-slate-50/50 group-hover:bg-blue-50/30 border-y border-transparent group-hover:border-blue-100 transition-colors">
+                    <span className={`text-[10px] font-bold px-4 py-1.5 rounded-full border uppercase tracking-wider flex items-center w-fit gap-2 ${roleStyles[user.role]}`}>
+                      <Shield size={12} /> {user.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5 bg-slate-50/50 group-hover:bg-blue-50/30 border-y border-transparent group-hover:border-blue-100 transition-colors">
+                    <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <Smartphone size={14} className="text-blue-500" /> {user.phone || "---"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5 bg-slate-50/50 group-hover:bg-blue-50/30 border-y border-r border-transparent group-hover:border-blue-100 rounded-r-[2rem] text-right">
+                    <UserActions user={user} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

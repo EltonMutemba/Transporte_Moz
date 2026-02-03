@@ -1,28 +1,45 @@
 import { UserRepository } from "./user.repository";
-import { RegisterInput } from "@/types/user"; // Precisas de definir este tipo
+import { RegisterInput, UserProfile } from "@/types/user";
 import bcrypt from "bcryptjs";
 
 export class UserService {
-  static async register(data: RegisterInput) {
-    // 1. Sanitização e Validação de Regra de Negócio
-    const phone = data.phone.trim();
-    
-    const existingUser = await UserRepository.findByPhone(phone);
-    if (existingUser) {
-      throw new Error("Este número de telemóvel já está registado.");
+  async getUserById(id: number): Promise<UserProfile | null> {
+    const user = await UserRepository.findById(id);
+    if (!user) return null;
+
+    return {
+      id: String(user.id),
+      name: user.name || "Sem Nome",
+      email: user.email || "",
+      phone: user.phone || "",
+      role: user.role as any,
+    };
+  }
+
+  async updateUser(id: number, data: { name?: string; phone?: string }) {
+    if (data.name && data.name.trim().length < 3) {
+      throw new Error("Nome demasiado curto para o sistema.");
     }
+    return await UserRepository.update(id, {
+      name: data.name?.trim(),
+      phone: data.phone?.trim(),
+    });
+  }
 
-    // 2. Segurança: Encriptação
+  async register(data: RegisterInput) {
+    const phone = data.phone.trim();
+    const existingUser = await UserRepository.findByPhone(phone);
+    if (existingUser) throw new Error("Telemóvel já registado.");
+
     const hashedPassword = await bcrypt.hash(data.password, 10);
-
-    // 3. Mapeamento Explícito (Não uses ...data por segurança)
-    // Isso garante que apenas os campos autorizados cheguem ao repositório
     return await UserRepository.create({
       name: data.name,
       phone: phone,
       email: data.email?.toLowerCase() || null,
       password: hashedPassword,
-      role: "CLIENT" // Forçamos o role para evitar que um user se registe como ADMIN
+      role: "CLIENT",
     });
   }
 }
+
+export const userService = new UserService();

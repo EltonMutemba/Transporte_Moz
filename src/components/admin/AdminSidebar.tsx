@@ -1,12 +1,26 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, Users, Bus, Wallet, Activity, 
   Ticket, CheckCircle, Map, User, FileText, Truck, LogOut 
 } from "lucide-react";
+import { logoutUser } from "@/application/actions/logoutUser"; //
 
-const ICONS_MAP: Record<string, any> = {
+export interface SidebarLink {
+  label: string;
+  href: string;
+  iconKey: keyof typeof ICONS_MAP;
+}
+
+interface AdminSidebarProps {
+  title?: string;
+  links: SidebarLink[];
+  userName: string;
+}
+
+const ICONS_MAP = {
   layout: LayoutDashboard,
   users: Users,
   bus: Bus,
@@ -18,24 +32,52 @@ const ICONS_MAP: Record<string, any> = {
   user: User,
 };
 
-export function AdminSidebar({ title, links = [], userName }: any) {
+export function AdminSidebar({ links = [], userName }: AdminSidebarProps) {
   const pathname = usePathname();
 
+  // Função para executar a saída do sistema [cite: 2026-01-28]
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (error) {
+      // O erro de redirect é normal no Next.js Actions, mas tratamos aqui por segurança
+      console.error("Erro ao processar logout:", error);
+    }
+  };
+
   return (
-    <aside className="w-64 bg-slate-950 text-slate-400 flex flex-col h-screen shrink-0">
+    <aside className="w-64 bg-slate-950 text-slate-400 flex flex-col h-screen shrink-0 border-r border-white/5">
       <div className="p-8">
         <div className="flex items-center gap-3 mb-10">
-          <div className="p-2 bg-red-600 rounded-lg"><Truck className="text-white w-5 h-5" /></div>
-          <h1 className="text-xl font-black text-white italic tracking-tighter">TP<span className="text-red-600">MOZ</span></h1>
+          <div className="p-2 bg-red-600 rounded-lg shadow-lg shadow-red-900/20">
+            <Truck className="text-white w-5 h-5" />
+          </div>
+          <h1 className="text-xl font-black text-white italic tracking-tighter uppercase">
+            TP<span className="text-red-600">MOZ</span>
+          </h1>
         </div>
 
         <nav className="space-y-1.5">
-          {links.map((link: any) => {
+          {links.map((link) => {
             const Icon = ICONS_MAP[link.iconKey] || FileText;
-            const isActive = pathname === link.href;
+            const isActive = link.href === "/dashboard" 
+              ? pathname === "/dashboard" 
+              : pathname.startsWith(link.href);
+
             return (
-              <Link key={link.href} href={link.href} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${isActive ? "bg-white/10 text-white shadow-lg" : "hover:text-white hover:bg-white/5"}`}>
-                <Icon size={18} className={isActive ? "text-red-600" : ""} />
+              <Link 
+                key={link.href} 
+                href={link.href} 
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[11px] font-bold transition-all duration-200 group ${
+                  isActive 
+                    ? "bg-white/10 text-white shadow-sm shadow-black/20" 
+                    : "hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Icon 
+                  size={18} 
+                  className={`transition-colors ${isActive ? "text-red-600" : "group-hover:text-red-400"}`} 
+                />
                 {link.label}
               </Link>
             );
@@ -43,10 +85,18 @@ export function AdminSidebar({ title, links = [], userName }: any) {
         </nav>
       </div>
       
-      <div className="mt-auto p-6 border-t border-slate-900 text-center">
-        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">{userName}</p>
-        <button className="flex items-center gap-2 justify-center w-full text-xs text-slate-500 hover:text-red-500 transition-colors">
-          <LogOut size={14} /> Sair
+      {/* RODAPÉ DA SIDEBAR: Agora funcional [cite: 2026-01-28] */}
+      <div className="mt-auto p-6 border-t border-white/5 bg-black/20">
+        <div className="mb-4">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Sessão Ativa</p>
+          <p className="text-xs font-bold text-slate-300 truncate">{userName}</p>
+        </div>
+        
+        <button 
+          onClick={handleLogout} // [cite: 2026-01-28]
+          className="flex items-center gap-2 justify-center w-full py-2.5 rounded-lg border border-white/5 text-[11px] font-bold text-slate-400 hover:text-white hover:bg-red-600/10 hover:border-red-600/20 transition-all"
+        >
+          <LogOut size={14} /> Sair do Sistema
         </button>
       </div>
     </aside>

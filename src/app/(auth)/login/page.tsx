@@ -7,7 +7,6 @@ import {
   Lock, ArrowRight, Smartphone, Truck, UserPlus, ShieldCheck 
 } from "lucide-react";
 import { loginUser } from "@/application/actions/loginUser";
-import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
@@ -21,10 +20,7 @@ export default function LoginPage() {
         setError(result.error);
         return;
       }
-      if (result?.user) {
-        sessionStorage.setItem("user", JSON.stringify(result.user));
-        window.location.href = "/dashboard"; 
-      }
+      // O redirecionamento é feito dentro da Server Action
     });
   }
 
@@ -33,7 +29,6 @@ export default function LoginPage() {
       
       {/* Coluna Esquerda - Visual Executivo */}
       <div className="hidden lg:flex lg:w-1/2 bg-slate-950 p-16 flex-col justify-between text-white relative overflow-hidden">
-        {/* Efeito de luz sutil no fundo */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full -mr-48 -mt-48" />
         
         <div className="relative z-10">
@@ -62,7 +57,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Coluna Direita - Formulário Minimalista */}
+      {/* Coluna Direita - Formulário */}
       <div className="flex-1 flex items-center justify-center p-8 lg:p-24 bg-slate-50/30">
         <div className="w-full max-w-sm">
           <div className="mb-12">
@@ -81,8 +76,8 @@ export default function LoginPage() {
                   name="login" 
                   type="text" 
                   required 
-                  placeholder="84xxxxxxx" 
-                  className="w-full pl-12 pr-6 py-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all placeholder:text-slate-300" 
+                  placeholder="84xxxxxxx ou email@com" 
+                  className="w-full pl-12 pr-6 py-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all" 
                 />
               </div>
             </div>
@@ -101,20 +96,17 @@ export default function LoginPage() {
                   type="password" 
                   required 
                   placeholder="••••••••" 
-                  className="w-full pl-12 pr-6 py-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all placeholder:text-slate-300" 
+                  className="w-full pl-12 pr-6 py-4 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-blue-600 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all" 
                 />
               </div>
             </div>
 
+            {/* Alerta de Erro Corrigido (Sem motion.div) */}
             {error && (
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-red-50 border border-red-100 p-4 rounded-xl text-red-600 text-xs font-semibold flex items-center gap-3"
-              >
+              <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-red-600 text-xs font-semibold flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
                 <div className="w-1 h-4 bg-red-500 rounded-full" />
                 {error}
-              </motion.div>
+              </div>
             )}
 
             <Button 
