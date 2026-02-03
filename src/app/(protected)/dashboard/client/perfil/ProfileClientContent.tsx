@@ -38,7 +38,11 @@ export default function ProfileClientContent({ user }: ProfileClientProps) {
       </div>
 
       <form 
-        action={(fd) => startTransition(() => updateProfile(fd))}
+        action={async (fd) => {
+          startTransition(async () => {
+            await updateProfile(fd);
+          });
+        }}
         className="grid grid-cols-1 lg:grid-cols-12 gap-6"
       >
         <input type="hidden" name="id" value={user.id} />
