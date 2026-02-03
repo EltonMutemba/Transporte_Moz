@@ -3,16 +3,44 @@ import { Wallet, TrendingUp, CreditCard, ArrowUpRight, ArrowDownRight } from "lu
 import { db } from "@/lib/db";
 
 export default async function AdminFinancePage() {
-  // 1. Extração de Dados Reais
-  const tickets = await db.ticket.findMany();
-  const totalRevenue = tickets.reduce((acc, ticket) => acc + ticket.price, 0);
+  // 1. Extração de Dados Reais incluindo a relação com Trip para obter o preço (Decimal)
+  const tickets = await db.ticket.findMany({
+    include: {
+      trip: true,
+    }
+  });
+
+  // 2. Cálculo da Receita Total convertendo Decimal para Number para evitar erro TS(2365)
+  const totalRevenue = tickets.reduce((acc, ticket) => {
+    const price = ticket.trip?.price ? Number(ticket.trip.price) : 0;
+    return acc + price;
+  }, 0);
+
   const totalTickets = tickets.length;
 
-  // Estatísticas fictícias para design (enquanto não temos gastos na DB)
+  // Estatísticas para o Dashboard
   const stats = [
-    { label: "Receita Total", value: `${totalRevenue.toLocaleString()} MT`, icon: Wallet, trend: "+12.5%", positive: true },
-    { label: "Bilhetes Vendidos", value: totalTickets, icon: CreditCard, trend: "+8.2%", positive: true },
-    { label: "Margem de Lucro", value: "85%", icon: TrendingUp, trend: "-2.1%", positive: false },
+    { 
+      label: "Receita Total", 
+      value: `${totalRevenue.toLocaleString()} MT`, 
+      icon: Wallet, 
+      trend: "+12.5%", 
+      positive: true 
+    },
+    { 
+      label: "Bilhetes Vendidos", 
+      value: totalTickets.toString(), 
+      icon: CreditCard, 
+      trend: "+8.2%", 
+      positive: true 
+    },
+    { 
+      label: "Margem de Lucro", 
+      value: "85%", 
+      icon: TrendingUp, 
+      trend: "-2.1%", 
+      positive: false 
+    },
   ];
 
   return (
@@ -65,11 +93,15 @@ export default async function AdminFinancePage() {
                     <CreditCard size={18} />
                   </div>
                   <div>
-                    <p className="text-xs font-black uppercase tracking-tighter">Bilhete #{t.id.slice(0, 8)}</p>
-                    <p className="text-[8px] text-slate-500 font-bold uppercase">Passageiro: {t.passengerName}</p>
+                    {/* Convertemos ID para String caso seja Number no Schema */}
+                    <p className="text-xs font-black uppercase tracking-tighter">Bilhete #{String(t.id).slice(0, 8)}</p>
+                    <p className="text-[8px] text-slate-500 font-bold uppercase">Status: {t.paymentStatus}</p>
                   </div>
                 </div>
-                <p className="text-sm font-black text-red-500">+{t.price} MT</p>
+                {/* Conversão de Decimal para Number também na exibição da lista */}
+                <p className="text-sm font-black text-red-500">
+                  +{t.trip?.price ? Number(t.trip.price).toLocaleString() : 0} MT
+                </p>
               </div>
             ))
           )}
