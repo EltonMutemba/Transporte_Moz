@@ -4,9 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, Users, Bus, Wallet, Activity, 
-  Ticket, CheckCircle, Map, User, FileText, Truck, LogOut 
+  Ticket, CheckCircle, Map, User, FileText, Truck, LogOut,
+  Settings, Shield, HelpCircle // Adicionei extras para prevenir futuros erros
 } from "lucide-react";
-import { logoutUser } from "@/application/actions/logoutUser"; //
+import { logoutUser } from "@/application/actions/logoutUser";
+
+// O objeto de mapeamento deve conter todas as chaves usadas no teu navigation.ts
+const ICONS_MAP = {
+  layout: LayoutDashboard,
+  users: Users,
+  bus: Bus,
+  wallet: Wallet,
+  activity: Activity,
+  ticket: Ticket,
+  check: CheckCircle,
+  map: Map,
+  user: User,
+  settings: Settings, // RESOLVE O ERRO: "settings" is not assignable
+  shield: Shield,
+  help: HelpCircle
+};
 
 export interface SidebarLink {
   label: string;
@@ -20,27 +37,13 @@ interface AdminSidebarProps {
   userName: string;
 }
 
-const ICONS_MAP = {
-  layout: LayoutDashboard,
-  users: Users,
-  bus: Bus,
-  wallet: Wallet,
-  activity: Activity,
-  ticket: Ticket,
-  check: CheckCircle,
-  map: Map,
-  user: User,
-};
-
 export function AdminSidebar({ links = [], userName }: AdminSidebarProps) {
   const pathname = usePathname();
 
-  // Função para executar a saída do sistema [cite: 2026-01-28]
   const handleLogout = async () => {
     try {
       await logoutUser();
     } catch (error) {
-      // O erro de redirect é normal no Next.js Actions, mas tratamos aqui por segurança
       console.error("Erro ao processar logout:", error);
     }
   };
@@ -59,7 +62,8 @@ export function AdminSidebar({ links = [], userName }: AdminSidebarProps) {
 
         <nav className="space-y-1.5">
           {links.map((link) => {
-            const Icon = ICONS_MAP[link.iconKey] || FileText;
+            // Se a chave não existir no mapa, ele usa o FileText por segurança
+            const Icon = ICONS_MAP[link.iconKey as keyof typeof ICONS_MAP] || FileText;
             const isActive = link.href === "/dashboard" 
               ? pathname === "/dashboard" 
               : pathname.startsWith(link.href);
@@ -85,7 +89,6 @@ export function AdminSidebar({ links = [], userName }: AdminSidebarProps) {
         </nav>
       </div>
       
-      {/* RODAPÉ DA SIDEBAR: Agora funcional [cite: 2026-01-28] */}
       <div className="mt-auto p-6 border-t border-white/5 bg-black/20">
         <div className="mb-4">
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Sessão Ativa</p>
@@ -93,7 +96,7 @@ export function AdminSidebar({ links = [], userName }: AdminSidebarProps) {
         </div>
         
         <button 
-          onClick={handleLogout} // [cite: 2026-01-28]
+          onClick={handleLogout}
           className="flex items-center gap-2 justify-center w-full py-2.5 rounded-lg border border-white/5 text-[11px] font-bold text-slate-400 hover:text-white hover:bg-red-600/10 hover:border-red-600/20 transition-all"
         >
           <LogOut size={14} /> Sair do Sistema

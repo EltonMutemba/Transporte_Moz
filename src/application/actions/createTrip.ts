@@ -10,14 +10,26 @@ export async function getBuses() {
 export async function createBus(formData: FormData) {
   const plate = formData.get("plate") as string;
   const model = formData.get("model") as string;
+  
+  // CORREÇÃO: Captura a capacidade e converte para número. 
+  // Se não vier nada do form, assume 50 lugares (padrão de autocarro)
+  const capacityInput = formData.get("capacity");
+  const capacity = capacityInput ? Number(capacityInput) : 50;
 
   try {
     await prisma.bus.create({
-      data: { plate: plate.toUpperCase(), model }
+      // Adicionamos 'capacity' aqui para satisfazer o Prisma
+      data: { 
+        plate: plate.toUpperCase(), 
+        model,
+        capacity 
+      }
     });
+    
     revalidatePath("/admin/buses");
     return { success: true };
   } catch (e) {
-    return { error: "Erro ao cadastrar autocarro. Placa duplicada?" };
+    console.error("Erro ao criar bus:", e);
+    return { error: "Erro ao cadastrar autocarro. Verifique se a placa já existe." };
   }
 }
