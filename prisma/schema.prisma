@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 🛡️ Definir Roles como Enum evita erros de escrita (admin vs ADMIN)
 enum Role {
   ADMIN
   OWNER
@@ -19,13 +16,60 @@ enum Role {
 
 model User {
   id        Int      @id @default(autoincrement())
-  username  String   @unique
-  name      String?  // <--- ESTA É A COLUNA QUE FALTA NO TEU ERRO
+  username  String?  @unique
+  phone     String   @unique
+  name      String?
   email     String?  @unique
   password  String
   role      Role     @default(CLIENT)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  tickets   Ticket[]
 
-  @@map("users") // Boa prática: tabelas em minúsculo no MySQL
+  @@map("users")
+}
+
+model Location {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  @@map("locations")
+}
+
+model Bus {
+  id    Int    @id @default(autoincrement())
+  plate String @unique
+  model String
+  trips Trip[]
+
+  @@map("buses")
+}
+
+model Trip {
+  id             Int      @id @default(autoincrement())
+  origin         String
+  destination    String
+  departureTime  DateTime
+  price          Decimal  @db.Decimal(10, 2)
+  status         String   @default("AVAILABLE")
+  busId          Int
+  bus            Bus      @relation(fields: [busId], references: [id])
+  availableSeats Int
+  tickets        Ticket[]
+
+  @@map("trips")
+}
+
+model Ticket {
+  id            Int      @id @default(autoincrement())
+  tripId        Int
+  trip          Trip     @relation(fields: [tripId], references: [id])
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  seatNumber    Int
+  paymentStatus String   @default("PENDING")
+  reference     String?  @unique
+  createdAt     DateTime @default(now())
+
+  @@map("tickets")
 }

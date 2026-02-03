@@ -1,124 +1,182 @@
-"use client";
-
 import React from "react";
 import { 
-  Bus, Users, Fuel, Map, 
-  ArrowUpRight, ArrowDownRight, AlertCircle, Clock 
+  Users, Bus, Wallet, AlertTriangle, 
+  ArrowUpRight, TrendingUp, MapPin, MoreHorizontal 
 } from "lucide-react";
 
-export default function TransportOwnerDashboard() {
+export default function AdminDashboardPage() {
   return (
-    <div className="space-y-10 pb-20">
-      {/* HEADER DINÂMICO */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      
+      {/* 1. HEADER DA PÁGINA */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 italic uppercase tracking-tighter">
-            Painel Operacional
+          <h1 className="text-4xl font-black tracking-tighter text-slate-900 uppercase">
+            Visão <span className="text-red-600">Geral</span>
           </h1>
-          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">
-            Nagi Investments • Gestão de Ativos e Viagens
-          </p>
+          <p className="text-slate-500 font-medium mt-1">Bem-vindo ao centro de comando operacional.</p>
         </div>
+        
         <div className="flex gap-2">
-          <button className="bg-slate-950 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all">
-            Relatório de Turno
+          <button className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
+            Exportar PDF
+          </button>
+          <button className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-slate-200">
+            Novo Relatório
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* MÉTRICAS DE ATIVOS (FROTA E DINHEIRO) */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <FleetKPI label="Receita Bruta Hoje" value="85.400 MT" trend="+5%" up={true} icon={<Fuel size={20} />} />
-        <FleetKPI label="Autocarros em Rota" value="12 / 15" trend="3 Parados" up={false} icon={<Bus size={20} />} />
-        <FleetKPI label="Passageiros Hoje" value="412" trend="+12%" up={true} icon={<Users size={20} />} />
-        <FleetKPI label="Ocupação Média" value="92%" trend="Excelente" up={true} icon={<Map size={20} />} />
-      </section>
+      {/* 2. GRID DE CARTÕES (KPIs) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          label="Receita Mensal" 
+          value="1.240.500 MT" 
+          icon={<Wallet size={20}/>} 
+          trend="+14.2%" 
+          color="blue"
+        />
+        <StatCard 
+          label="Utilizadores Ativos" 
+          value="4.821" 
+          icon={<Users size={20}/>} 
+          trend="+5.1%" 
+          color="indigo"
+        />
+        <StatCard 
+          label="Frota em Movimento" 
+          value="32 / 45" 
+          icon={<Bus size={20}/>} 
+          trend="82%" 
+          color="emerald"
+        />
+        <StatCard 
+          label="Alertas de Manutenção" 
+          value="07" 
+          icon={<AlertTriangle size={20}/>} 
+          isCritical 
+          color="red"
+        />
+      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* MONITORIZAÇÃO DE VIAGENS EM TEMPO REAL */}
-        <div className="xl:col-span-2 bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-          <h3 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-2">
-            <Clock size={18} className="text-indigo-600" /> Próximas Partidas e Estado
-          </h3>
-          <div className="space-y-4">
-            <LiveTrip bus="AAB-202-MC" route="Maputo ↔ Beira" driver="J. Muthemba" status="Em Embarque" load="42/50" />
-            <LiveTrip bus="MC-01-99-MP" route="Maputo ↔ Xai-Xai" driver="A. Sitoe" status="Em Rota" load="50/50" />
-            <LiveTrip bus="AFG-505-MC" route="Beira ↔ Tete" driver="C. Langa" status="Atrasado" load="12/50" isWarning />
+      {/* 3. ÁREA DE CONTEÚDO PRINCIPAL (Duas Colunas) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* TABELA DE ÚLTIMAS TRANSAÇÕES (Larga) */}
+        <div className="lg:col-span-2 bg-white border border-slate-200/60 rounded-[2.5rem] shadow-sm overflow-hidden flex flex-col">
+          <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="font-black text-slate-900 uppercase text-xs tracking-[0.2em]">Fluxo de Caixa Recente</h3>
+            <TrendingUp size={16} className="text-slate-300" />
+          </div>
+          <div className="p-2 overflow-x-auto">
+            <table className="w-full text-left border-separate border-spacing-y-2">
+              <thead>
+                <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">
+                  <th className="px-6 py-3">Cliente</th>
+                  <th className="px-6 py-3">Rota</th>
+                  <th className="px-6 py-3">Valor</th>
+                  <th className="px-6 py-3 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm">
+                <TransactionRow name="Helton Stélio" route="Maputo ➔ Beira" amount="2.500 MT" status="Pago" />
+                <TransactionRow name="Artur Mutemba" route="Matola ➔ Xai-Xai" amount="800 MT" status="Pago" />
+                <TransactionRow name="Sara Macuácua" route="Nampula ➔ Pemba" amount="3.200 MT" status="Pendente" />
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* ALERTAS DE MANUTENÇÃO E STAFF */}
-        <div className="bg-amber-50 p-10 rounded-[3rem] border border-amber-100 shadow-sm">
-          <h3 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-2 text-amber-700">
-            <AlertCircle size={18} /> Manutenção e Alertas
-          </h3>
+        {/* LISTA DE ALERTAS / MONITORAMENTO (Estreita) */}
+        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="font-black uppercase text-[10px] tracking-[0.2em] text-slate-400">Monitor de Frota</h3>
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          </div>
+          
           <div className="space-y-6">
-            <MaintenanceItem bus="ABX-101-MC" issue="Troca de Óleo" days="Faltam 2 dias" />
-            <MaintenanceItem bus="MM-442-MP" issue="Pneus Desgastados" days="Urgente" critical />
-            <div className="pt-6 border-t border-amber-200 mt-6">
-              <p className="text-[9px] font-black text-amber-800 uppercase mb-4">Staff em Falta</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white rounded-full border-2 border-amber-200" />
-                <p className="text-[10px] font-bold text-amber-900 uppercase">Motorista: Pedro Mondlane (Turno 18h)</p>
-              </div>
-            </div>
+            <FleetAlert bus="TPM-01-MP" location="Av. Eduardo Mondlane" status="Atrasado 12min" type="warning" />
+            <FleetAlert bus="TPM-42-GZ" location="Portagem Sul" status="Em Movimento" type="success" />
+            <FleetAlert bus="TPM-09-NB" location="Garagem Central" status="Manutenção" type="error" />
           </div>
+
+          <button className="w-full mt-10 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
+            Ver Mapa em Tempo Real
+          </button>
         </div>
+
       </div>
     </div>
   );
 }
 
-/* COMPONENTES ESPECÍFICOS PARA TRANSPORTADORA */
-function FleetKPI({ label, value, trend, up, icon }: any) {
+// COMPONENTES AUXILIARES (Poderiam estar em arquivos separados)
+
+function StatCard({ label, value, icon, trend, isCritical, color }: any) {
   return (
-    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group">
-      <div className="flex justify-between items-center mb-4">
-        <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white transition-all italic">
+    <div className="bg-white border border-slate-200/60 p-7 rounded-[2.5rem] hover:shadow-xl transition-all group">
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-4 bg-${color}-50 text-${color}-600 rounded-2xl group-hover:scale-110 transition-transform`}>
           {icon}
         </div>
-        <span className={`text-[9px] font-black px-3 py-1 rounded-full ${up ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-          {trend}
-        </span>
+        {trend && (
+          <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${isCritical ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+            {trend}
+          </span>
+        )}
       </div>
-      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-      <h2 className="text-2xl font-black text-slate-900 italic tracking-tighter">{value}</h2>
+      <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest leading-none">{label}</p>
+      <p className={`text-2xl font-black mt-2 tracking-tighter ${isCritical ? 'text-red-600' : 'text-slate-900'}`}>{value}</p>
     </div>
   );
 }
 
-function LiveTrip({ bus, route, driver, status, load, isWarning = false }: any) {
+function TransactionRow({ name, route, amount, status }: any) {
   return (
-    <div className={`flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[2rem] border ${isWarning ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100'}`}>
-      <div className="flex items-center gap-4">
-        <div className={`w-3 h-3 rounded-full ${isWarning ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`} />
-        <div>
-          <p className="text-[11px] font-black text-slate-900 uppercase italic">{bus} — {route}</p>
-          <p className="text-[9px] font-bold text-slate-400 uppercase italic">Motorista: {driver}</p>
+    <tr className="bg-slate-50/50 hover:bg-slate-50 transition-colors group">
+      <td className="px-6 py-4 rounded-l-2xl border-y border-l border-transparent group-hover:border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black uppercase">
+            {name[0]}
+          </div>
+          <span className="font-bold text-slate-800 tracking-tight">{name}</span>
         </div>
-      </div>
-      <div className="flex items-center gap-8 mt-4 md:mt-0">
-        <div className="text-right">
-          <p className="text-[9px] font-black text-slate-400 uppercase">Estado</p>
-          <p className={`text-[10px] font-black uppercase ${isWarning ? 'text-red-600' : 'text-indigo-600'}`}>{status}</p>
-        </div>
-        <div className="text-right border-l pl-8 border-slate-200">
-          <p className="text-[9px] font-black text-slate-400 uppercase">Ocupação</p>
-          <p className="text-[10px] font-black text-slate-900">{load}</p>
-        </div>
-      </div>
-    </div>
+      </td>
+      <td className="px-6 py-4 border-y border-transparent group-hover:border-slate-100 text-slate-500 font-medium text-xs">
+        {route}
+      </td>
+      <td className="px-6 py-4 border-y border-transparent group-hover:border-slate-100 font-black text-slate-900">
+        {amount}
+      </td>
+      <td className="px-6 py-4 rounded-r-2xl border-y border-r border-transparent group-hover:border-slate-100 text-right">
+        <button className="p-2 hover:bg-white rounded-lg transition-colors">
+          <MoreHorizontal size={16} className="text-slate-400" />
+        </button>
+      </td>
+    </tr>
   );
 }
 
-function MaintenanceItem({ bus, issue, days, critical = false }: any) {
+function FleetAlert({ bus, location, status, type }: any) {
+  const colors = {
+    success: "bg-emerald-500",
+    warning: "bg-amber-500",
+    error: "bg-red-500"
+  };
+
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex items-start gap-4">
+      <div className={`w-1 h-10 rounded-full ${colors[type as keyof typeof colors]}`} />
       <div>
-        <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{bus}</p>
-        <p className="text-[9px] font-bold text-slate-500 uppercase">{issue}</p>
+        <p className="text-xs font-black tracking-tight">{bus}</p>
+        <div className="flex items-center gap-1 text-slate-500 mt-0.5">
+          <MapPin size={10} />
+          <span className="text-[10px] font-bold">{location}</span>
+        </div>
+        <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${type === 'error' ? 'text-red-400' : 'text-slate-400'}`}>
+          {status}
+        </p>
       </div>
-      <p className={`text-[9px] font-black uppercase ${critical ? 'text-red-600' : 'text-amber-600'}`}>{days}</p>
     </div>
   );
 }

@@ -1,20 +1,13 @@
 import "../globals.css";
-import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 
-export const metadata: Metadata = {
-  title: "Trans-Moz - Gestão de Transportadoras",
-  description: "Plataforma SaaS para gestão de frotas e bilhética em Moçambique",
-};
+const inter = Inter({ subsets: ["latin"] });
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt">
-      <body className="antialiased bg-gray-50">
-        {/* O conteúdo das páginas (public e dashboard) entra aqui */}
+      {/* O fundo slate-950 aqui garante que a "moldura" da sidebar seja escura por padrão */}
+      <body className={`${inter.className} antialiased bg-slate-950`}>
         {children}
       </body>
     </html>

@@ -1,13 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: ["class"],
   content: [
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}"
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
+ 
+  plugins: [require("tailwindcss-animate")],
 }
-
-/*D:\Users\steli\Desktop\Transportadoras\transporte-moz\tailwind.config.js*/

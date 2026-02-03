@@ -1,15 +1,18 @@
-"use client";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { jwtVerify } from "jose";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "chave-secreta-moz-2026");
 
-export default function DashboardEntryPage() {
-  const router = useRouter();
-  const [roleName, setRoleName] = useState("utilizador");
+export default async function DashboardEntryPage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("auth-token")?.value;
 
-  useEffect(() => {
-    const userRole = localStorage.getItem("user-role") || "client";
-    setRoleName(userRole);
+  if (!token) redirect("/login");
+
+  try {
+    const { payload } = await jwtVerify(token, SECRET);
+    const userRole = (payload.role as string || "client").toLowerCase();
 
     const routes: Record<string, string> = {
       admin: "/dashboard/admin",
@@ -18,23 +21,15 @@ export default function DashboardEntryPage() {
       client: "/dashboard/client/viagens",
     };
 
-    const target = routes[userRole.toLowerCase()] || "/dashboard/client/viagens";
+    const target = routes[userRole] || "/dashboard/client/viagens";
     
-    const timeout = setTimeout(() => {
-      router.push(target);
-    }, 500);
-
-    return () => clearTimeout(timeout);
-  }, [router]);
-
-  return (
-    <div className="h-screen flex items-center justify-center bg-slate-50">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        <div className="animate-pulse font-black uppercase text-slate-400 tracking-[0.3em] text-[10px]">
-          Encaminhando para o painel de {roleName}...
-        </div>
-      </div>
-    </div>
-  );
+    // Redirecionamento de SERVIDOR: Muito mais rápido e seguro
+    redirect(target);
+    
+  } catch (error) {
+    redirect("/login");
+  }
+  
+  // Este retorno nunca será visto, mas o Next.js exige um componente
+  return null;
 }
