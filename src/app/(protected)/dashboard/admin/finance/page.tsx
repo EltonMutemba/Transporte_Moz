@@ -1,6 +1,6 @@
 import React from "react";
 import { Wallet, TrendingUp, CreditCard, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { db } from "@/lib/db";
+import { prisma as db } from "@/lib/prisma";
 
 export default async function AdminFinancePage() {
   // 1. Extração de Dados Reais incluindo a relação com Trip para obter o preço (Decimal)

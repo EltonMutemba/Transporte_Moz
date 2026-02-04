@@ -1,6 +1,6 @@
 import React from "react";
 import { Bus as BusIcon, MapPin, Users } from "lucide-react";
-import { db } from "@/lib/db";
+import { prisma as db } from "@/lib/prisma";
 import { RegisterBusModal } from "@/components/admin/RegisterBusModal";
 import { DeleteBusButton } from "@/components/admin/DeleteBusButton"; // [cite: 2026-01-28]
 

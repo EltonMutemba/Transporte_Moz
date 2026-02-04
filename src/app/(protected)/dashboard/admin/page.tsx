@@ -1,140 +1,144 @@
-"use client";
+import React from "react";
+import { Bus, MapPin, Wallet, TrendingUp, Clock, ArrowUpRight, Users } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 
-import React, { useState } from "react";
-import { Search, Shield, Smartphone, Crown, Users2 } from "lucide-react";
-import { AddUserButton } from "@/components/dashboard/AddUserButton";
-import { UserActions } from "@/components/dashboard/UserActions";
+async function getOperationalData() {
+  try {
+    const [trips, totalBuses, totalClients, revenueData] = await Promise.all([
+      prisma.trip.findMany({
+        take: 5,
+        orderBy: { departureTime: 'asc' },
+        include: { bus: true } 
+      }),
+      prisma.bus.count(),
+      prisma.user.count({
+        where: { role: 'CLIENT' }
+      }),
+      prisma.trip.aggregate({
+        _sum: { price: true },
+        where: { status: 'AVAILABLE' }
+      })
+    ]);
 
-export default function UsersAdminPage({ initialUsers = [] }: { initialUsers: any[] }) {
-  const [activeTab, setActiveTab] = useState<'staff' | 'clientes'>('staff');
-  const [search, setSearch] = useState("");
+    const totalRevenue = Number(revenueData._sum.price || 0);
 
-  const roleStyles: any = {
-    OWNER: "bg-blue-50 text-blue-700 border-blue-100",
-    ADMIN: "bg-red-50 text-red-700 border-red-100",
-    STAFF: "bg-emerald-50 text-emerald-700 border-emerald-100",
-    CLIENT: "bg-slate-100 text-slate-700 border-slate-200",
-  };
+    return { 
+      trips: trips || [], 
+      activeBuses: totalBuses || 0, 
+      totalUsers: totalClients || 0,
+      totalRevenue
+    };
+  } catch (error) {
+    console.error("Erro na busca de dados:", error);
+    return { trips: [], activeBuses: 0, totalUsers: 0, totalRevenue: 0 };
+  }
+}
 
-  // FILTRAGEM COM PRIORIDADE EXECUTIVA [cite: 2026-01-28]
-  const filteredUsers = initialUsers
-    .filter((user) => {
-      const matchesSearch = 
-        user.name?.toLowerCase().includes(search.toLowerCase()) || 
-        user.email?.toLowerCase().includes(search.toLowerCase()) ||
-        user.phone?.includes(search);
-      
-      if (activeTab === 'staff') {
-        return matchesSearch && ['OWNER', 'ADMIN', 'STAFF'].includes(user.role);
-      }
-      return matchesSearch && ['CLIENT', 'USER', 'PASSAGEIRO'].includes(user.role);
-    })
-    .sort((a, b) => (a.role === 'OWNER' ? -1 : 1));
+export default async function AdminDashboardPage() {
+  const { trips, activeBuses, totalUsers, totalRevenue } = await getOperationalData();
 
   return (
-    // pb-32 garante que o dropdown do último utilizador não seja cortado pelo fim da página [cite: 2026-01-28]
-    <div className="space-y-8 animate-in fade-in duration-500 pb-32">
+    <div className="space-y-10 pb-20 w-full max-w-full overflow-hidden animate-in fade-in duration-500">
       
-      {/* 1. HEADER E AÇÃO PRINCIPAL */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-950 uppercase">
-            Gestão de <span className="text-blue-600">Identidades</span>
-          </h1>
-          <p className="text-slate-500 font-semibold text-sm mt-1">
-            Administração de privilégios e base de dados operacional.
+      {/* HEADER - APENAS TÍTULO [cite: 2026-02-04] */}
+      <div className="flex flex-col gap-1 px-1">
+        <div className="flex items-center gap-2 text-blue-600">
+          <TrendingUp size={14} />
+          <span className="text-[10px] font-black uppercase tracking-[0.3em]">Painel de Controle</span>
+        </div>
+        <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter">
+          Visão <span className="text-blue-600">Geral</span>
+        </h1>
+      </div>
+
+      {/* KPIs DINÂMICOS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard label="Total Clientes" value={totalUsers.toString()} icon={<Users size={20} />} color="bg-blue-600" trend="Passageiros" />
+        <StatCard 
+          label="Receita em Rota" 
+          value={`${totalRevenue.toLocaleString('pt-MZ')} MT`} 
+          icon={<Wallet size={20} />} 
+          color="bg-indigo-600" 
+          trend="Valor Bruto" 
+        />
+        <StatCard label="Frota Operacional" value={activeBuses.toString()} icon={<Bus size={20} />} color="bg-emerald-600" trend="Unidades" />
+      </div>
+
+      {/* ÁREA DE GESTÃO */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* INFO STATUS */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm h-fit">
+          <h3 className="text-xs font-black uppercase text-slate-900 mb-6 flex items-center gap-2">
+            <MapPin size={16} className="text-blue-600" /> Status do Sistema
+          </h3>
+          <p className="text-[10px] text-slate-400 font-medium mb-6 uppercase leading-relaxed">
+            As métricas refletem os dados em tempo real. O uso de componentes limpos ajuda na responsividade mobile. [cite: 2026-02-04]
           </p>
-        </div>
-        <AddUserButton />
-      </div>
-
-      {/* 2. BARRA DE FERRAMENTAS: BUSCA E FILTRO DE TIPO [cite: 2026-01-28] */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="flex p-1.5 bg-slate-100 rounded-[1.5rem] border border-slate-200 w-fit">
-          <button 
-            onClick={() => setActiveTab('staff')}
-            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'staff' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            Equipa & Direção
-          </button>
-          <button 
-            onClick={() => setActiveTab('clientes')}
-            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'clientes' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            Passageiros
-          </button>
-        </div>
-
-        <div className="relative flex-1 group">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-600 transition-colors" />
-          <input 
-            type="text" 
-            placeholder="PESQUISAR POR NOME, EMAIL OU TELEFONE..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white border border-slate-200 rounded-[1.5rem] py-5 pl-16 pr-8 text-sm font-semibold text-slate-900 outline-none focus:ring-4 focus:ring-blue-600/5 transition-all" 
-          />
-        </div>
-      </div>
-
-      {/* 3. TABELA DE DADOS - REMOVIDO OVERFLOW HIDDEN PARA NÃO CORTAR DROPDOWNS */}
-      <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-sm">
-        <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 rounded-t-[2.5rem]">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white rounded-lg shadow-sm">
-              <Users2 size={20} className="text-blue-600" />
-            </div>
-            <h3 className="font-bold text-slate-800 uppercase text-sm tracking-widest">
-              {activeTab === 'staff' ? 'Corpo Operacional' : 'Lista de Clientes'}
-            </h3>
+          <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
+             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter italic">TPMOZ v1.0</span>
           </div>
-          <span className="text-xs font-bold text-slate-400 uppercase">Total: {filteredUsers.length}</span>
         </div>
 
-        <div className="p-6">
-          <table className="w-full text-left border-separate border-spacing-y-4">
-            <thead>
-              <tr className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">
-                <th className="px-6 pb-2">Identidade</th>
-                <th className="px-6 pb-2">Nível de Acesso</th>
-                <th className="px-6 pb-2">Contacto</th>
-                <th className="px-6 pb-2 text-right">Gestão</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="group transition-all">
-                  <td className="px-6 py-5 bg-slate-50/50 group-hover:bg-blue-50/30 border-y border-l border-transparent group-hover:border-blue-100 rounded-l-[2rem] transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 text-slate-950 flex items-center justify-center font-black text-sm relative">
-                        {user.name?.[0] || "U"}
-                        {user.role === 'OWNER' && <Crown size={12} className="absolute -top-1 -right-1 text-amber-500 fill-amber-500" />}
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-950 text-base leading-tight">{user.name || user.username}</p>
-                        <p className="text-xs text-slate-500 lowercase mt-0.5">{user.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 bg-slate-50/50 group-hover:bg-blue-50/30 border-y border-transparent group-hover:border-blue-100 transition-colors">
-                    <span className={`text-[10px] font-bold px-4 py-1.5 rounded-full border uppercase tracking-wider flex items-center w-fit gap-2 ${roleStyles[user.role]}`}>
-                      <Shield size={12} /> {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5 bg-slate-50/50 group-hover:bg-blue-50/30 border-y border-transparent group-hover:border-blue-100 transition-colors">
-                    <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                      <Smartphone size={14} className="text-blue-500" /> {user.phone || "---"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5 bg-slate-50/50 group-hover:bg-blue-50/30 border-y border-r border-transparent group-hover:border-blue-100 rounded-r-[2rem] text-right">
-                    <UserActions user={user} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* LISTAGEM DE ATIVIDADE */}
+        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Atividade em Rota</h2>
+            <span className="text-[9px] font-bold text-blue-600 uppercase flex items-center gap-1">Próximas Partidas</span>
+          </div>
+          <div className="p-6 space-y-4">
+            {trips.length > 0 ? trips.map((trip: any) => (
+              <div key={trip.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 hover:border-blue-100 transition-all group">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100">
+                    <Clock size={16} className="text-slate-400" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-xs text-slate-900 uppercase">{trip.origin} → {trip.destination}</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">
+                      {Number(trip.price).toFixed(2)} MT • {trip.bus?.plate || 'A definir'}
+                    </p>
+                  </div>
+                </div>
+                <StatusBadge status={trip.status} />
+              </div>
+            )) : (
+              <div className="py-12 text-center text-[10px] font-black text-slate-300 uppercase italic">
+                Sem viagens programadas
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+// --- SUB-COMPONENTES ---
+
+function StatCard({ label, value, icon, color, trend }: any) {
+  return (
+    <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center justify-between transition-all">
+      <div>
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+        <p className="text-2xl font-black text-slate-900 tracking-tighter">{value}</p>
+        <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full uppercase">{trend}</span>
+      </div>
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${color}`}>
+        {icon}
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const styles: any = {
+    AVAILABLE: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    ON_ROAD: "bg-blue-50 text-blue-600 border-blue-100",
+  };
+  return (
+    <span className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase border ${styles[status] || "bg-slate-50 text-slate-400"}`}>
+      {status === 'AVAILABLE' ? 'Disponível' : status}
+    </span>
   );
 }

@@ -8,33 +8,34 @@ datasource db {
 }
 
 enum Role {
-  ADMIN  // Gestor operacional (Nagi)
-  OWNER  // Dono que só vê relatórios
-  STAFF  // Bilheteiro
-  CLIENT // Passageiro
+  ADMIN
+  OWNER
+  STAFF
+  CLIENT
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String?  @unique
-  phone     String   @unique
+  id        Int        @id @default(autoincrement())
+  username  String?    @unique
+  phone     String     @unique
   name      String?
-  email     String?  @unique
+  email     String?    @unique
   password  String
-  role      Role     @default(CLIENT)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      Role       @default(CLIENT)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   tickets   Ticket[]
-  logs      AuditLog[] // Para o Owner fiscalizar
+  logs      AuditLog[]
 
   @@map("users")
 }
 
 model Bus {
-  id        Int     @id @default(autoincrement())
-  plate     String  @unique
+  id        Int      @id @default(autoincrement())
+  plate     String   @unique
   model     String
-  capacity  Int     // Adicionado: Essencial para validar lotação
+  capacity  Int
+  status    String   @default("ACTIVE")
   trips     Trip[]
 
   @@map("buses")
@@ -51,26 +52,46 @@ model Trip {
   bus            Bus       @relation(fields: [busId], references: [id])
   availableSeats Int
   tickets        Ticket[]
-  packages       Package[] // Inclusão de Encomendas
+  packages       Package[]
 
   @@map("trips")
+}
+
+// TABELA CRUCIAL QUE FALTAVA
+model Booking {
+  id            Int      @id @default(autoincrement())
+  reference     String   @unique // MOV-XXXX
+  passengerName String
+  phoneNumber   String
+  totalAmount   Decimal  @db.Decimal(10, 2)
+  status        String   @default("PENDING") // PENDING, PAID, FAILED
+  tickets       Ticket[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("bookings")
 }
 
 model Ticket {
   id            Int      @id @default(autoincrement())
   tripId        Int
   trip          Trip     @relation(fields: [tripId], references: [id])
-  userId        Int
-  user          User     @relation(fields: [userId], references: [id])
+  
+  // Tornamos opcional para compras sem login
+  userId        Int?
+  user          User?    @relation(fields: [userId], references: [id])
+  
+  // Ligação com a Reserva
+  bookingId     Int?
+  booking       Booking? @relation(fields: [bookingId], references: [id])
+  
   seatNumber    Int
   paymentStatus String   @default("PENDING")
-  reference     String?  @unique
   createdAt     DateTime @default(now())
 
   @@map("tickets")
 }
 
-// NOVA: Essencial para o negócio em Moçambique
 model Package {
   id            Int      @id @default(autoincrement())
   description   String
@@ -80,17 +101,16 @@ model Package {
   receiverPhone String
   tripId        Int
   trip          Trip     @relation(fields: [tripId], references: [id])
-  status        String   @default("PENDING") // PENDING, DELIVERED
+  status        String   @default("PENDING")
 
   @@map("packages")
 }
 
-// NOVA: Para o Owner (Dono) ter o controle que discutimos
 model AuditLog {
   id        Int      @id @default(autoincrement())
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
-  action    String   // ex: "Preço da viagem alterado"
+  action    String
   createdAt DateTime @default(now())
 
   @@map("audit_logs")

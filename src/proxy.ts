@@ -4,40 +4,49 @@ import { jwtVerify } from "jose";
 
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "chave-secreta-moz-2026");
 
-// ✅ No Next.js 16, a função DEVE chamar-se 'proxy'
+/**
+ * ✅ CORREÇÃO TURBOPACK: O nome da função DEVE ser 'proxy' 
+ * para alinhar com o novo padrão do Next.js 16.
+ */
 export async function proxy(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;
   const { pathname } = request.nextUrl;
 
-  // 1. Redireciona se não houver token (Proteção Básica)
+  // 1. Bloqueio de acesso sem token
   if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    if (pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    return NextResponse.next();
   }
 
   try {
     const { payload } = await jwtVerify(token, SECRET);
     const userRole = (payload.role as string)?.toUpperCase();
 
-    // 2. Proteção de Nível Admin
-    if (pathname.startsWith("/dashboard/admin") && userRole !== "ADMIN") {
+    // 2. LOGICA DE REDIRECIONAMENTO (Conforme a tua Árvore)
+    // Direciona o Admin para a Visão Geral em /dashboard/admin
+    if (pathname === "/dashboard") {
+      if (userRole === "ADMIN" || userRole === "OWNER") {
+        return NextResponse.redirect(new URL("/dashboard/admin", request.url));
+      }
       return NextResponse.redirect(new URL("/dashboard/client/viagens", request.url));
     }
 
-    // 3. Proteção de Nível Owner (Dono da Transportadora)
-    if (pathname.startsWith("/dashboard/owner") && userRole !== "OWNER" && userRole !== "ADMIN") {
+    // 3. PROTEÇÃO DE ROTAS ADMIN
+    if (pathname.startsWith("/dashboard/admin") && userRole !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard/client/viagens", request.url));
     }
 
     return NextResponse.next();
   } catch (error) {
-    // 4. Token corrompido ou expirado: Limpeza de segurança
     const response = NextResponse.redirect(new URL("/login", request.url));
     response.cookies.delete("auth-token");
     return response;
   }
 }
 
-// Define quais rotas o proxy deve vigiar
+// O matcher continua obrigatório
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard", "/dashboard/:path*"],
 };

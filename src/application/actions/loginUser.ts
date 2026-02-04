@@ -1,7 +1,7 @@
 "use server";
 
 // Unificando com o db.ts que já existe na sua árvore
-import { db as prisma } from "@/lib/db"; 
+import { prisma } from "@/lib/prisma"; 
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import { cookies } from "next/headers";

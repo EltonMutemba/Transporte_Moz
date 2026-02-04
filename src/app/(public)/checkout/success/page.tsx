@@ -1,115 +1,187 @@
 "use client";
 
-import React from "react";
-import { CheckCircle2, QrCode, Download, Share2, MapPin, Calendar, User, ArrowRight, Printer } from "lucide-react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import { 
+  CheckCircle2, QrCode, Share2, ArrowRight, Printer, Loader2, XCircle, Clock
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { simulatePayment } from "@/application/actions/simulatePayment";
+import { getBookingStatus } from "@/application/actions/getBookingStatus";
 
 export default function SuccessPage() {
+  const searchParams = useSearchParams();
+  const ref = searchParams.get("ref");
+  
+  const [loading, setLoading] = useState(true);
+  const [booking, setBooking] = useState<any | null>(null);
+  const [simulating, setSimulating] = useState(false);
+  const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const checkStatus = useCallback(async () => {
+    if (!ref) return;
+    try {
+      const data = await getBookingStatus(ref);
+      if (data) {
+        setBooking(data);
+        setLoading(false);
+        if (data.status === "PENDING") {
+          pollTimerRef.current = setTimeout(checkStatus, 8000);
+        }
+      }
+    } catch (error) {
+      pollTimerRef.current = setTimeout(checkStatus, 15000);
+    }
+  }, [ref]);
+
+  useEffect(() => {
+    checkStatus();
+    return () => { if (pollTimerRef.current) clearTimeout(pollTimerRef.current); };
+  }, [checkStatus]);
+
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+      <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-4" />
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Sincronizando Bilhete...</p>
+    </div>
+  );
+
+  if (!booking) return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white text-center">
+      <XCircle size={40} strokeWidth={1} className="text-red-500 mb-4" />
+      <h2 className="text-lg font-black uppercase tracking-tight text-slate-900">Falha na Verificação</h2>
+      <p className="text-xs text-slate-400 mt-2 max-w-[200px]">Não conseguimos conectar à base de dados para validar esta referência.</p>
+    </div>
+  );
+
+  const isPaid = booking.status === "PAID";
+
   return (
-    <main className="min-h-screen bg-slate-50 pt-16 pb-20 px-6">
-      <div className="max-w-2xl mx-auto">
+    <main className="min-h-screen bg-[#F8FAFC] py-0 md:py-12 px-0 md:px-6 font-sans antialiased">
+      <div className="max-w-md mx-auto relative">
         
-        {/* STATUS DA TRANSAÇÃO */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-3 bg-green-100 text-green-700 px-6 py-2 rounded-full mb-6">
-            <CheckCircle2 className="w-5 h-5" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Pagamento Confirmado</span>
-          </div>
-          <h1 className="text-4xl font-black tracking-tighter text-slate-900 uppercase italic">
-            Reserva Finalizada.
-          </h1>
-          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-3">
-            O seu bilhete digital foi gerado com sucesso.
-          </p>
+        {/* Notificação de Status - Flutuante e Minimalista */}
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20 w-full px-8 hidden md:block">
+            <div className={`py-2 px-4 rounded-full text-center text-[9px] font-black uppercase tracking-[0.2em] shadow-sm border ${
+                isPaid ? "bg-emerald-500 text-white border-emerald-400" : "bg-amber-400 text-white border-amber-300"
+            }`}>
+                {isPaid ? "✔ Pagamento Confirmado" : "⌛ Aguardando PIN M-Pesa"}
+            </div>
         </div>
 
-        {/* BILHETE DIGITAL (ESTILO MINIMALISTA) */}
-        <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-slate-100 relative">
+        {/* O BILHETE (CARD) */}
+        <div className="bg-white shadow-[0_20px_50px_rgba(0,0,0,0.08)] md:rounded-[2rem] overflow-hidden border-x border-b md:border border-slate-200/60">
           
-          {/* HEADER DO BILHETE */}
-          <div className="bg-slate-900 p-8 text-white flex justify-between items-center">
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-blue-400 mb-1">Bilhete Eletrónico</p>
-              <h2 className="text-xl font-black italic uppercase tracking-tight">TransPorto Moz</h2>
+          {/* Header Superior - Gradiente Profissional */}
+          <div className={`p-8 pb-12 relative overflow-hidden ${
+            isPaid ? "bg-slate-900" : "bg-blue-700"
+          }`}>
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+                <CheckCircle2 size={120} />
             </div>
-            <div className="text-right">
-              <p className="text-[9px] font-black uppercase opacity-50">Localizador</p>
-              <p className="text-lg font-black text-blue-400 uppercase">TPM-99283</p>
-            </div>
-          </div>
-
-          {/* CORPO DO BILHETE */}
-          <div className="p-8 md:p-10 space-y-10">
             
-            {/* ROTA PRINCIPAL */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-8">
-              <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Origem</p>
-                <p className="text-2xl font-black text-slate-900 uppercase italic">Maputo</p>
-              </div>
-              <div className="flex flex-col items-center gap-1 opacity-20">
-                <div className="w-12 h-px bg-slate-900" />
-                <ArrowRight className="w-4 h-4" />
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Destino</p>
-                <p className="text-2xl font-black text-slate-900 uppercase italic">Beira</p>
-              </div>
+            <div className="relative z-10 flex justify-between items-start">
+                <div>
+                    <h1 className="text-white text-2xl font-black tracking-tighter">TransPorto</h1>
+                    <p className="text-blue-200/60 text-[10px] font-bold uppercase tracking-[0.2em]">Mozambique Transport</p>
+                </div>
+                <div className="text-right">
+                    <p className="text-blue-200/40 text-[9px] font-bold uppercase tracking-wider">Ref. Viagem</p>
+                    <p className="text-white font-mono text-xs font-bold">{booking.reference.split('-').pop()}</p>
+                </div>
             </div>
 
-            {/* DETALHES TÉCNICOS */}
-            <div className="grid grid-cols-2 gap-y-8 gap-x-12">
-              <TicketInfo label="Data de Partida" value="15 de Fevereiro, 2026" icon={<Calendar className="w-3.5 h-3.5"/>} />
-              <TicketInfo label="Assento(s)" value="Poltrona 07, 08" icon={<MapPin className="w-3.5 h-3.5"/>} />
-              <TicketInfo label="Passageiro Principal" value="Stélio Baloi" icon={<User className="w-3.5 h-3.5"/>} />
-              <TicketInfo label="Terminal de Saída" value="Terminal da Junta" />
+            {/* Rota com Design de Aeroporto */}
+            <div className="relative z-10 mt-10 flex items-center justify-between">
+                <div className="flex-1">
+                    <p className="text-blue-200/50 text-[9px] font-black uppercase mb-1">Origem</p>
+                    <p className="text-white text-2xl font-black tracking-tight">{booking.trip.origin}</p>
+                </div>
+                <div className="px-4 flex flex-col items-center opacity-40">
+                    <div className="w-12 h-[1px] bg-white/30" />
+                    <ArrowRight className="text-white my-1" size={16} />
+                    <div className="w-12 h-[1px] bg-white/30" />
+                </div>
+                <div className="flex-1 text-right">
+                    <p className="text-blue-200/50 text-[9px] font-black uppercase mb-1">Destino</p>
+                    <p className="text-white text-2xl font-black tracking-tight">{booking.trip.destination}</p>
+                </div>
+            </div>
+          </div>
+
+          {/* Divisória de Ticket (Efeito Notch) */}
+          <div className="relative h-6 bg-white">
+            <div className="absolute -top-3 -left-3 w-6 h-6 bg-[#F8FAFC] rounded-full border-r border-slate-200/60 hidden md:block" />
+            <div className="absolute -top-3 -right-3 w-6 h-6 bg-[#F8FAFC] rounded-full border-l border-slate-200/60 hidden md:block" />
+            <div className="mx-8 border-b-2 border-dashed border-slate-100 h-full w-auto" />
+          </div>
+
+          {/* Corpo do Bilhete - Grid de Dados */}
+          <div className="bg-white px-8 py-6">
+            <div className="grid grid-cols-2 gap-y-8 gap-x-4">
+              <DetailItem label="Passageiro" value={booking.passengerName} />
+              <DetailItem label="Data Partida" value={new Date(booking.trip.departureTime).toLocaleDateString('pt-MZ')} />
+              <DetailItem label="Lugar Selecionado" value={booking.tickets.map((t:any) => t.seatNumber).join(", ")} />
+              <DetailItem label="Tarifa Total" value={`${Number(booking.totalAmount).toLocaleString()} MT`} isBold />
             </div>
 
-            {/* ZONA DE VALIDAÇÃO */}
-            <div className="pt-10 border-t border-dashed border-slate-200 flex flex-col md:flex-row items-center gap-10">
-              <div className="bg-white p-3 rounded-2xl border border-slate-200">
-                <QrCode className="w-28 h-28 text-slate-900" />
-              </div>
-              <div className="space-y-3">
-                <h4 className="text-[11px] font-black uppercase text-slate-900 tracking-widest">Instruções de Embarque</h4>
-                <ul className="text-[10px] text-slate-500 font-bold space-y-2 uppercase leading-relaxed tracking-tight">
-                  <li>• Chegue ao terminal 30 minutos antes.</li>
-                  <li>• Apresente este QR Code ao motorista.</li>
-                  <li>• Tenha o seu BI/Passaporte disponível.</li>
-                </ul>
-              </div>
+            {/* Zona do QR Code - Ultra Minimalista */}
+            <div className="mt-12 flex flex-col items-center">
+                <div className={`p-4 bg-white border-2 border-slate-900 rounded-3xl transition-all duration-1000 ${
+                    !isPaid ? "opacity-5 blur-xl scale-90" : "opacity-100 scale-100"
+                }`}>
+                    <QrCode size={130} strokeWidth={1.2} className="text-slate-900" />
+                </div>
+                {!isPaid && (
+                    <div className="absolute mt-10 text-center animate-bounce">
+                        <Clock size={20} className="mx-auto text-slate-300 mb-2" />
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Aguardando M-Pesa</p>
+                    </div>
+                )}
+                <p className={`mt-6 text-[10px] font-black uppercase tracking-[0.3em] ${isPaid ? 'text-slate-900' : 'text-slate-300'}`}>
+                    {isPaid ? "Voucher de Embarque Ativo" : "Bilhete Provisório"}
+                </p>
             </div>
           </div>
         </div>
 
-        {/* BOTÕES DE ACÇÃO */}
-        <div className="mt-12 flex flex-col sm:flex-row gap-4">
-          <Button className="flex-1 h-14 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase gap-2">
-            <Printer className="w-4 h-4" /> Imprimir Bilhete
-          </Button>
-          <Button variant="outline" className="flex-1 h-14 border-slate-200 rounded-2xl font-black text-[10px] tracking-widest uppercase gap-2 hover:bg-slate-100">
-            <Share2 className="w-4 h-4" /> Enviar por WhatsApp
-          </Button>
-        </div>
-
-        <div className="mt-12 text-center">
-          <Link href="/" className="text-[11px] font-black text-slate-400 hover:text-blue-600 uppercase tracking-[0.3em] transition-all">
-            Voltar para a Página Inicial
-          </Link>
+        {/* Ações Inferiores - Botões de "App" */}
+        <div className="p-8 space-y-3">
+          {isPaid ? (
+            <div className="grid grid-cols-1 gap-3">
+              <button className="w-full h-14 bg-slate-900 text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95">
+                Baixar PDF do Bilhete
+              </button>
+              <button className="w-full h-14 bg-white border border-slate-200 text-slate-600 font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                <Share2 size={16} /> Partilhar no WhatsApp
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={async () => {
+                setSimulating(true);
+                await simulatePayment(booking.reference);
+                window.location.reload();
+              }}
+              disabled={simulating}
+              className="w-full py-5 text-[10px] font-black uppercase tracking-[0.4em] text-blue-500 bg-blue-50/50 border-2 border-dashed border-blue-200 rounded-2xl animate-pulse"
+            >
+              {simulating ? "Processando..." : "Simular Recebimento"}
+            </button>
+          )}
         </div>
       </div>
     </main>
   );
 }
 
-function TicketInfo({ label, value, icon }: { label: string, value: string, icon?: React.ReactNode }) {
+function DetailItem({ label, value, isBold = false }: { label: string, value: string, isBold?: boolean }) {
   return (
-    <div className="space-y-1">
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-        {icon} {label}
-      </p>
-      <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{value}</p>
+    <div className="flex flex-col">
+      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</span>
+      <span className={`text-[13px] uppercase truncate ${isBold ? 'font-black text-blue-600' : 'font-bold text-slate-800'}`}>
+        {value}
+      </span>
     </div>
   );
 }
