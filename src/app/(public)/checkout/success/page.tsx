@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { 
-  CheckCircle2, QrCode, Share2, ArrowRight, Printer, Loader2, XCircle, Clock
+  CheckCircle2, QrCode, Share2, ArrowRight, Loader2, XCircle, Clock
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { simulatePayment } from "@/application/actions/simulatePayment";
 import { getBookingStatus } from "@/application/actions/getBookingStatus";
 
-export default function SuccessPage() {
+/* --- COMPONENTE DE CONTEÚDO (Lógica Principal) --- */
+
+function SuccessContent() {
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref");
   
@@ -60,7 +61,7 @@ export default function SuccessPage() {
     <main className="min-h-screen bg-[#F8FAFC] py-0 md:py-12 px-0 md:px-6 font-sans antialiased">
       <div className="max-w-md mx-auto relative">
         
-        {/* Notificação de Status - Flutuante e Minimalista */}
+        {/* Notificação de Status */}
         <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20 w-full px-8 hidden md:block">
             <div className={`py-2 px-4 rounded-full text-center text-[9px] font-black uppercase tracking-[0.2em] shadow-sm border ${
                 isPaid ? "bg-emerald-500 text-white border-emerald-400" : "bg-amber-400 text-white border-amber-300"
@@ -72,7 +73,6 @@ export default function SuccessPage() {
         {/* O BILHETE (CARD) */}
         <div className="bg-white shadow-[0_20px_50px_rgba(0,0,0,0.08)] md:rounded-[2rem] overflow-hidden border-x border-b md:border border-slate-200/60">
           
-          {/* Header Superior - Gradiente Profissional */}
           <div className={`p-8 pb-12 relative overflow-hidden ${
             isPaid ? "bg-slate-900" : "bg-blue-700"
           }`}>
@@ -91,7 +91,6 @@ export default function SuccessPage() {
                 </div>
             </div>
 
-            {/* Rota com Design de Aeroporto */}
             <div className="relative z-10 mt-10 flex items-center justify-between">
                 <div className="flex-1">
                     <p className="text-blue-200/50 text-[9px] font-black uppercase mb-1">Origem</p>
@@ -109,33 +108,30 @@ export default function SuccessPage() {
             </div>
           </div>
 
-          {/* Divisória de Ticket (Efeito Notch) */}
           <div className="relative h-6 bg-white">
             <div className="absolute -top-3 -left-3 w-6 h-6 bg-[#F8FAFC] rounded-full border-r border-slate-200/60 hidden md:block" />
             <div className="absolute -top-3 -right-3 w-6 h-6 bg-[#F8FAFC] rounded-full border-l border-slate-200/60 hidden md:block" />
             <div className="mx-8 border-b-2 border-dashed border-slate-100 h-full w-auto" />
           </div>
 
-          {/* Corpo do Bilhete - Grid de Dados */}
           <div className="bg-white px-8 py-6">
             <div className="grid grid-cols-2 gap-y-8 gap-x-4">
               <DetailItem label="Passageiro" value={booking.passengerName} />
               <DetailItem label="Data Partida" value={new Date(booking.trip.departureTime).toLocaleDateString('pt-MZ')} />
-              <DetailItem label="Lugar Selecionado" value={booking.tickets.map((t:any) => t.seatNumber).join(", ")} />
-              <DetailItem label="Tarifa Total" value={`${Number(booking.totalAmount).toLocaleString()} MT`} isBold />
+              <DetailItem label="Lugar" value={booking.tickets.map((t:any) => t.seatNumber).join(", ")} />
+              <DetailItem label="Tarifa" value={`${Number(booking.totalAmount).toLocaleString()} MT`} isBold />
             </div>
 
-            {/* Zona do QR Code - Ultra Minimalista */}
-            <div className="mt-12 flex flex-col items-center">
+            <div className="mt-12 flex flex-col items-center relative">
                 <div className={`p-4 bg-white border-2 border-slate-900 rounded-3xl transition-all duration-1000 ${
                     !isPaid ? "opacity-5 blur-xl scale-90" : "opacity-100 scale-100"
                 }`}>
                     <QrCode size={130} strokeWidth={1.2} className="text-slate-900" />
                 </div>
                 {!isPaid && (
-                    <div className="absolute mt-10 text-center animate-bounce">
-                        <Clock size={20} className="mx-auto text-slate-300 mb-2" />
-                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Aguardando M-Pesa</p>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center animate-bounce">
+                        <Clock size={20} className="text-slate-400 mb-2" />
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Aguardando PIN</p>
                     </div>
                 )}
                 <p className={`mt-6 text-[10px] font-black uppercase tracking-[0.3em] ${isPaid ? 'text-slate-900' : 'text-slate-300'}`}>
@@ -145,7 +141,6 @@ export default function SuccessPage() {
           </div>
         </div>
 
-        {/* Ações Inferiores - Botões de "App" */}
         <div className="p-8 space-y-3">
           {isPaid ? (
             <div className="grid grid-cols-1 gap-3">
@@ -174,6 +169,25 @@ export default function SuccessPage() {
     </main>
   );
 }
+
+/* --- COMPONENTE PRINCIPAL (Export Default) --- */
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-center">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-4" />
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+          Iniciando validação segura...
+        </p>
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
+  );
+}
+
+/* --- AUXILIARES --- */
 
 function DetailItem({ label, value, isBold = false }: { label: string, value: string, isBold?: boolean }) {
   return (
