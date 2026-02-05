@@ -1,52 +1,35 @@
+import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server"; 
-import { jwtVerify } from "jose";
 
-const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "chave-secreta-moz-2026");
+export default auth((req) => {
+  const { nextUrl } = req;
+  const isLoggedIn = !!req.auth;
+  const userRole = req.auth?.user?.role?.toUpperCase();
 
-/**
- * ✅ CORREÇÃO TURBOPACK: O nome da função DEVE ser 'proxy' 
- * para alinhar com o novo padrão do Next.js 16.
- */
-export async function proxy(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  const { pathname } = request.nextUrl;
+  const isDashboardPage = nextUrl.pathname.startsWith("/dashboard");
 
-  // 1. Bloqueio de acesso sem token
-  if (!token) {
-    if (pathname.startsWith("/dashboard")) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-    return NextResponse.next();
+  // 1. Se não estiver logado e tentar entrar no dashboard -> Login
+  if (!isLoggedIn && isDashboardPage) {
+    return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
-  try {
-    const { payload } = await jwtVerify(token, SECRET);
-    const userRole = (payload.role as string)?.toUpperCase();
-
-    // 2. LOGICA DE REDIRECIONAMENTO (Conforme a tua Árvore)
-    // Direciona o Admin para a Visão Geral em /dashboard/admin
-    if (pathname === "/dashboard") {
-      if (userRole === "ADMIN" || userRole === "OWNER") {
-        return NextResponse.redirect(new URL("/dashboard/admin", request.url));
-      }
-      return NextResponse.redirect(new URL("/dashboard/client/viagens", request.url));
+  // 2. Lógica de Redirecionamento Inteligente (A tua Árvore)
+  if (nextUrl.pathname === "/dashboard") {
+    if (userRole === "ADMIN" || userRole === "OWNER") {
+      return NextResponse.redirect(new URL("/dashboard/admin", nextUrl));
     }
-
-    // 3. PROTEÇÃO DE ROTAS ADMIN
-    if (pathname.startsWith("/dashboard/admin") && userRole !== "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard/client/viagens", request.url));
-    }
-
-    return NextResponse.next();
-  } catch (error) {
-    const response = NextResponse.redirect(new URL("/login", request.url));
-    response.cookies.delete("auth-token");
-    return response;
+    return NextResponse.redirect(new URL("/dashboard/client/viagens", nextUrl));
   }
-}
 
-// O matcher continua obrigatório
+  // 3. Proteção de Rotas Admin (Só ADMIN entra aqui)
+  if (nextUrl.pathname.startsWith("/dashboard/admin") && userRole !== "ADMIN") {
+    return NextResponse.redirect(new URL("/dashboard/client/viagens", nextUrl));
+  }
+
+  return NextResponse.next();
+});
+
+// Matcher para proteger toda a árvore do dashboard
 export const config = {
-  matcher: ["/dashboard", "/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/dashboard"],
 };

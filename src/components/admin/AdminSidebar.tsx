@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, Users, Bus, Wallet, Activity, 
   Ticket, CheckCircle, Map, User, FileText, Truck, LogOut,
-  Settings, Shield, HelpCircle, Menu, X, PlusCircle 
+  Settings, Shield, HelpCircle, Menu, X, PlusCircle, Home 
 } from "lucide-react";
 import { logoutUser } from "@/application/actions/logoutUser";
 
@@ -31,15 +31,22 @@ export function AdminSidebar({ title, links = [], userName }: any) {
 
   return (
     <>
-      {/* TRIGGER MOBILE MANTIDO */}
+      {/* TRIGGER MOBILE */}
       <div className="lg:hidden fixed top-4 left-4 z-[60]">
-        <button onClick={() => setIsOpen(!isOpen)} className="p-3 bg-slate-950 text-white rounded-xl border border-white/10 shadow-2xl active:scale-95 transition-transform">
+        <button 
+          onClick={() => setIsOpen(!isOpen)} 
+          className="p-3 bg-slate-950 text-white rounded-xl border border-white/10 shadow-2xl active:scale-95 transition-transform"
+        >
           {isOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
+      {/* OVERLAY MOBILE */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[40] lg:hidden animate-in fade-in" onClick={() => setIsOpen(false)} />
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[40] lg:hidden animate-in fade-in" 
+          onClick={() => setIsOpen(false)} 
+        />
       )}
 
       <aside className={`
@@ -63,18 +70,17 @@ export function AdminSidebar({ title, links = [], userName }: any) {
             </div>
           </div>
 
-          {/* NAVEGAÇÃO DINÂMICA COM O BOTÃO NO LUGAR CERTO */}
+          {/* NAVEGAÇÃO DINÂMICA */}
           <nav className="space-y-1.5">
             {links.map((link: any) => {
               const Icon = ICONS_MAP[link.iconKey as keyof typeof ICONS_MAP] || FileText;
               const isActive = pathname.startsWith(link.href);
               
-              // Verificamos se o link atual é o de "Frota" (ou o ponto onde queres inserir o botão)
               const isBusLink = link.iconKey === 'bus';
 
               return (
                 <React.Fragment key={link.href}>
-                  {/* INSERÇÃO DO BOTÃO ACIMA DA FROTA [cite: 2026-02-04] */}
+                  {/* BOTÃO "NOVO SERVIÇO" ACIMA DA FROTA */}
                   {isBusLink && (
                     <Link 
                       href="/dashboard/admin/services/new" 
@@ -107,18 +113,30 @@ export function AdminSidebar({ title, links = [], userName }: any) {
           </nav>
         </div>
         
-        {/* FOOTER INFO MANTIDO */}
+        {/* FOOTER - INFO OPERADOR + NAVEGAÇÃO EXTERNA + LOGOUT */}
         <div className="p-6 border-t border-white/5 bg-black/20">
           <div className="mb-4 px-2">
             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Operador</p>
             <p className="text-xs font-bold text-slate-300 truncate">{userName}</p>
           </div>
-          <button 
-            onClick={() => logoutUser()}
-            className="flex items-center gap-2 justify-center w-full py-2.5 rounded-lg border border-white/5 text-[11px] font-bold text-slate-400 hover:text-white hover:bg-red-600/10 hover:border-red-600/20 transition-all"
-          >
-            <LogOut size={14} /> Sair do Sistema
-          </button>
+
+          <div className="space-y-2">
+            {/* BOTÃO VOLTAR PARA HOMEPAGE */}
+            <Link 
+              href="/" 
+              className="flex items-center gap-2 justify-center w-full py-2.5 rounded-lg border border-white/5 text-[10px] font-bold text-slate-500 hover:text-blue-400 hover:bg-blue-600/5 hover:border-blue-600/20 transition-all uppercase tracking-tight"
+            >
+              <Home size={14} /> Ver Site Público
+            </Link>
+
+            {/* BOTÃO DE SAIR (LOGOUT) */}
+            <button 
+              onClick={() => logoutUser()}
+              className="flex items-center gap-2 justify-center w-full py-2.5 rounded-lg border border-white/5 text-[11px] font-bold text-slate-400 hover:text-white hover:bg-red-600/10 hover:border-red-600/20 transition-all"
+            >
+              <LogOut size={14} /> Sair do Sistema
+            </button>
+          </div>
         </div>
       </aside>
     </>
