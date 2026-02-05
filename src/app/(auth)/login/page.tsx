@@ -4,7 +4,7 @@ import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { 
-  Lock, ArrowRight, Smartphone, Truck, UserPlus, ShieldCheck, ChevronLeft 
+  Lock, ArrowRight, Smartphone, Truck, UserPlus, ShieldCheck 
 } from "lucide-react";
 import { loginUser } from "@/application/actions/loginUser";
 
@@ -12,38 +12,27 @@ export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
 
-  // CORREÇÃO: Removido o async/await da função externa para não travar o fluxo do Next.js
-  function handleSubmit(formData: FormData) {
+  async function handleSubmit(formData: FormData) {
     setError("");
-    
     startTransition(async () => {
-      // Deixamos a Action correr. Se ela redirecionar, o Next.js assume o controlo.
-      // Se ela devolver um objeto de erro, nós capturamos.
       const result = await loginUser(formData);
       if (result?.error) {
         setError(result.error);
+        return;
       }
+      // O redirecionamento é feito dentro da Server Action
     });
   }
 
   return (
     <main className="min-h-screen bg-white flex flex-col lg:flex-row font-sans selection:bg-blue-100">
       
-      {/* Botão de Voltar Flutuante - Responsividade Mobile */}
-      <Link 
-        href="/" 
-        className="lg:hidden absolute top-6 left-6 z-50 flex items-center gap-2 text-slate-500 font-bold text-xs uppercase tracking-widest hover:text-blue-600 transition-colors bg-white/80 backdrop-blur-md p-2 rounded-lg border border-slate-100 shadow-sm"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        Início
-      </Link>
-
-      {/* Coluna Esquerda - Visual Executivo (Oculta em Mobile) */}
+      {/* Coluna Esquerda - Visual Executivo */}
       <div className="hidden lg:flex lg:w-1/2 bg-slate-950 p-16 flex-col justify-between text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full -mr-48 -mt-48" />
         
         <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-3 mb-24 group w-fit">
+          <Link href="/" className="flex items-center gap-3 mb-24 group">
             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
               <Truck className="w-5 h-5 text-white" />
             </div>
@@ -71,7 +60,7 @@ export default function LoginPage() {
       {/* Coluna Direita - Formulário */}
       <div className="flex-1 flex items-center justify-center p-8 lg:p-24 bg-slate-50/30">
         <div className="w-full max-w-sm">
-          <div className="mb-12 text-center lg:text-left">
+          <div className="mb-12">
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Entrar</h1>
             <p className="text-slate-500 font-medium text-sm mt-2">Bem-vindo de volta ao seu painel.</p>
           </div>
@@ -112,6 +101,7 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Alerta de Erro Corrigido (Sem motion.div) */}
             {error && (
               <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-red-600 text-xs font-semibold flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
                 <div className="w-1 h-4 bg-red-500 rounded-full" />
@@ -120,7 +110,6 @@ export default function LoginPage() {
             )}
 
             <Button 
-              type="submit"
               disabled={isPending} 
               className="w-full h-14 bg-slate-950 hover:bg-blue-600 text-white font-bold rounded-xl text-sm transition-all shadow-xl shadow-slate-200 border-none group"
             >
