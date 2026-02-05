@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql" // Alterado de mysql para postgresql
   url      = env("DATABASE_URL")
 }
 
@@ -42,29 +42,28 @@ model Bus {
 }
 
 model Trip {
-  id             Int       @id @default(autoincrement())
-  origin         String
-  destination    String
-  departureTime  DateTime
-  price          Decimal   @db.Decimal(10, 2)
-  status         String    @default("AVAILABLE")
-  busId          Int
-  bus            Bus       @relation(fields: [busId], references: [id])
+  id            Int       @id @default(autoincrement())
+  origin        String
+  destination   String
+  departureTime DateTime
+  price         Decimal   @db.Decimal(10, 2)
+  status        String    @default("AVAILABLE")
+  busId         Int
+  bus           Bus       @relation(fields: [busId], references: [id])
   availableSeats Int
-  tickets        Ticket[]
-  packages       Package[]
+  tickets       Ticket[]
+  packages      Package[]
 
   @@map("trips")
 }
 
-// TABELA CRUCIAL QUE FALTAVA
 model Booking {
   id            Int      @id @default(autoincrement())
-  reference     String   @unique // MOV-XXXX
+  reference     String   @unique
   passengerName String
   phoneNumber   String
   totalAmount   Decimal  @db.Decimal(10, 2)
-  status        String   @default("PENDING") // PENDING, PAID, FAILED
+  status        String   @default("PENDING")
   tickets       Ticket[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -77,11 +76,9 @@ model Ticket {
   tripId        Int
   trip          Trip     @relation(fields: [tripId], references: [id])
   
-  // Tornamos opcional para compras sem login
   userId        Int?
   user          User?    @relation(fields: [userId], references: [id])
   
-  // Ligação com a Reserva
   bookingId     Int?
   booking       Booking? @relation(fields: [bookingId], references: [id])
   
